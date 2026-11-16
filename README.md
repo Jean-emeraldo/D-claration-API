@@ -28,6 +28,37 @@ cp .env.example .env
 npm run dev
 ```
 
+## Local PostgreSQL setup
+
+Create a dedicated local role and database from the PostgreSQL administrator
+account:
+
+```bash
+sudo -u postgres psql
+```
+
+At the `postgres=#` prompt, run:
+
+```sql
+CREATE ROLE registration_api LOGIN;
+\password registration_api
+CREATE DATABASE registration_api OWNER registration_api;
+\q
+```
+
+Enter the same password configured in `DATABASE_URL` when prompted by
+`\password`. In the API `.env` file, set `DATABASE_URL` to
+`postgresql://registration_api:<password>@127.0.0.1:5432/registration_api`.
+Keep `.env` local and never commit it.
+
+Start the API with `npm run dev`. It creates the `registration_requests` table
+and its status index automatically when it connects to the database. Verify
+the table with:
+
+```bash
+psql -h 127.0.0.1 -U registration_api -d registration_api -c '\dt'
+```
+
 ## Available routes
 
 - `GET /health`
