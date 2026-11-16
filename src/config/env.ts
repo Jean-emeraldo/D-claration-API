@@ -22,10 +22,6 @@ export const env = {
   },
 };
 
-if (!env.databaseUrl) {
-  throw new Error('DATABASE_URL is required.');
-}
-
 if (!Number.isInteger(env.otpTtlMinutes) || env.otpTtlMinutes < 1 || env.otpTtlMinutes > 60) {
   throw new Error('OTP_TTL_MINUTES must be an integer between 1 and 60.');
 }

@@ -146,6 +146,9 @@ export async function reviewRegistration(data: {
     };
   }
 
+  let firebaseUid: string;
+  let passwordResetLink: string;
+
   try {
     const firebaseAuth = getFirebaseAuth();
     const password = generateSecurePassword();
@@ -156,31 +159,33 @@ export async function reviewRegistration(data: {
       emailVerified: true,
     });
 
-    await firebaseAuth.generatePasswordResetLink(registration.email);
-
-    const updated = await updateRegistrationById(registration.id, {
-      status: 'approved',
-      approved_at: new Date(),
-      firebase_uid: user.uid,
-      admin_note: data.adminNote ?? 'Approved by administrator',
-    });
-
-    await sendMail({
-      to: registration.email,
-      subject: 'Votre compte a été approuvé',
-      text: `Votre compte a bien été approuvé. Pour finaliser votre mot de passe, veuillez utiliser le lien de réinitialisation envoyé par Firebase.`,
-    });
-
-    return {
-      id: updated.id,
-      status: 'approved',
-      firebaseUid: user.uid,
-      message: 'Registration approved and Firebase account created.',
-    };
+    firebaseUid = user.uid;
+    passwordResetLink = await firebaseAuth.generatePasswordResetLink(registration.email);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown Firebase error';
     throw new Error(`Unable to create Firebase user: ${message}`);
   }
+
+  const updated = await updateRegistrationById(registration.id, {
+    status: 'approved',
+    approved_at: new Date(),
+    firebase_uid: firebaseUid,
+    admin_note: data.adminNote ?? 'Approved by administrator',
+  });
+
+  await sendMail({
+    to: registration.email,
+    subject: 'Votre compte a été approuvé',
+    text: `Votre compte a bien été approuvé. Pour définir votre mot de passe, utilisez ce lien : ${passwordResetLink}`,
+    html: `<p>Votre compte a bien été approuvé.</p><p><a href="${passwordResetLink}">Définir mon mot de passe</a></p>`,
+  });
+
+  return {
+    id: updated.id,
+    status: 'approved',
+    firebaseUid,
+    message: 'Registration approved and Firebase account created.',
+  };
 }
 
 export async function getRegistrationStatus(id: number) {

@@ -28,6 +28,10 @@ export async function sendMail({
   html?: string;
 }): Promise<void> {
   if (!transporter) {
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      throw new Error('SMTP_HOST is required to send email in production.');
+    }
+
     console.log(`[MAIL DEV MODE] To: ${to}`);
     console.log(`[MAIL DEV MODE] Subject: ${subject}`);
     console.log(`[MAIL DEV MODE] Body: ${text}`);
